@@ -239,7 +239,11 @@ if((V.view==="addR"||V.view==="editR")&&window._rf){
 var n=document.getElementById("rN");if(n)window._rf.name=n.value;
 var a=document.getElementById("rA");if(a)window._rf.addr=a.value;
 var w=document.getElementById("rW");if(w)window._rf.web=w.value;
-}}
+}
+if((V.view==="addW"||V.view==="editW")&&window._wf){
+var cust=document.getElementById("wBcustom");if(cust)window._wf.rbCustom=cust.value;
+}
+}
 function R(){capForm();
 var h='<div class="hdr" onclick="nav(\'home\')"><div><h1>Plate Notes</h1><div class="hdr-sub">San Diego Dining Journal</div></div><div class="hdr-icons"><div class="hdr-icon" onclick="event.stopPropagation();nav(\'people\')" title="People">👥</div><div class="hdr-icon" onclick="event.stopPropagation();nav(\'setup\')" title="Settings">⚙️</div></div></div>';
 switch(V.view){
@@ -252,6 +256,7 @@ case"editList":h+=vEditList();break;}
 document.getElementById("app").innerHTML=h;
 if(V.view==="addR"||V.view==="editR")setTimeout(function(){fNP();fSP();},0);
 if(V.view==="addD"||V.view==="editD")setTimeout(function(){renderDishTypeBtns();renderWhoBtns();},0);
+if(V.view==="addW"||V.view==="editW")setTimeout(function(){renderRbBtns();},0);
 }
 var render=R;
 
@@ -379,11 +384,25 @@ var h='<button class="b bg" onclick="nav(\'home\')">← Back</button><div class=
 if(un.length){h+='<div class="sb"><span class="sh">Want to Try</span></div>';
 h+=un.map(function(w){return'<div class="cd"><div class="ch"><div><div class="ct">'+esc(w.name)+'</div>'+(w.rn?'<div class="cs">at '+esc(w.rn)+'</div>':'')+(w.rb?'<div class="cdt">Rec\'d by '+esc(w.rb)+'</div>':'')+(w.notes?'<div class="nt">'+esc(w.notes)+'</div>':'')+'</div><div class="ibs"><button class="ib" onclick="markT(\''+w.id+'\')">✅</button><button class="ib" onclick="editW(\''+w.id+'\')">✏️</button><button class="ib" onclick="delW(\''+w.id+'\')">🗑️</button></div></div></div>';}).join('');}
 if(tr.length){h+='<div class="sb" style="margin-top:20px"><span class="sh" style="color:var(--text3)">Already Tried</span></div>';
-h+=tr.map(function(w){return'<div class="cd" style="opacity:.6"><div class="ch"><div><div class="ct" style="text-decoration:line-through">'+esc(w.name)+'</div>'+(w.rn?'<div class="cs">at '+esc(w.rn)+'</div>':'')+'</div><div class="ibs"><button class="ib" onclick="delW(\''+w.id+'\')">🗑️</button></div></div></div>';}).join('');}
+h+=tr.map(function(w){return'<div class="cd" style="opacity:.6"><div class="ch"><div><div class="ct" style="text-decoration:line-through">'+esc(w.name)+'</div>'+(w.rn?'<div class="cs">at '+esc(w.rn)+'</div>':'')+'</div><div class="ibs"><button class="ib" onclick="undoTried(\''+w.id+'\')">↩️</button><button class="ib" onclick="delW(\''+w.id+'\')">🗑️</button></div></div></div>';}).join('');}
 if(!D.wishlist.length)h+='<div class="emp">Your wishlist is empty!</div>';return h;}
 
 function vWishForm(){var ed=V.view==="editW",it=V.edit||{};
-return'<div class="fc"><div class="ft">'+(ed?"Edit":"Add to Wishlist")+'</div><label class="lbl">Restaurant or Dish name *</label><input class="inp" id="wN" value="'+esc(it.name||"")+'" placeholder="e.g. Their birria tacos"><label class="lbl">At restaurant (optional)</label><input class="inp" id="wR" value="'+esc(it.rn||"")+'" placeholder="e.g. Tacos El Gordo"><label class="lbl">Recommended by</label><input class="inp" id="wB" value="'+esc(it.rb||"")+'" placeholder="e.g. Jake, Instagram..."><label class="lbl">Notes</label><textarea class="ta" id="wNt" placeholder="Why you want to try it...">'+esc(it.notes||"")+'</textarea><div class="bf"><button class="b bp" onclick="saveW()">Save</button><button class="b bg" onclick="cancel()">Cancel</button></div></div>';}
+if(!window._wf||!window._wf._init){
+var presets=["Word of Mouth","Social Media","Ad","Walked by it","Other",""];
+var irb=it.rb||"";var irc="";
+if(presets.indexOf(irb)<0){irc=irb;irb="Other";}
+window._wf={rb:irb,rbCustom:irc,_init:true};}
+var h='<div class="fc"><div class="ft">'+(ed?"Edit":"Add to Wishlist")+'</div>';
+h+='<label class="lbl">Restaurant Name *</label>';
+h+='<div style="display:flex;gap:8px"><input class="inp" id="wR" value="'+esc(it.rn||"")+'" placeholder="e.g. Tacos El Gordo" style="margin:0;flex:1"><button class="b bp bs" onclick="doWishSearch()" style="white-space:nowrap">🔍 Search</button></div>';
+h+='<div id="wishSearchResults"></div>';
+h+='<label class="lbl">Dish Name</label><input class="inp" id="wN" value="'+esc(it.name||"")+'" placeholder="e.g. Their birria tacos">';
+h+='<label class="lbl">Recommended By</label><div class="or" id="rbRow"></div>';
+if(window._wf.rb==="Other"){h+='<input class="inp" id="wBcustom" value="'+esc(window._wf.rbCustom)+'" placeholder="e.g. Jake, a blog..." style="margin-top:8px">';}
+h+='<label class="lbl">Notes</label><textarea class="ta" id="wNt" placeholder="Why you want to try it...">'+esc(it.notes||"")+'</textarea>';
+h+='<div class="bf"><button class="b bp" onclick="saveW()">Save</button><button class="b bg" onclick="cancel()">Cancel</button></div></div>';
+return h;}
 
 // ---- FRIEND RECS ----
 function vFrec(){
@@ -447,11 +466,11 @@ return h;}
 // ============================================================
 // ACTIONS
 // ============================================================
-function nav(v){V.view=v;V.edit=null;window._d=null;window._rf=null;if(v==="home"){V.sel=null;V.tab="spots";}window.scrollTo(0,0);R();}
+function nav(v){V.view=v;V.edit=null;window._d=null;window._rf=null;window._wf=null;if(v==="home"){V.sel=null;V.tab="spots";}window.scrollTo(0,0);R();}
 function softR(){capForm();var sy=window.scrollY;R();window.scrollTo(0,sy);}
 function addDishNav(){if(!D.restaurants.length){toast("Add a restaurant first!");return;}V.view="addD";V.edit=null;window._d=null;R();}
 function openR(id){V.sel=id;V.view="rest";window.scrollTo(0,0);R();}
-function cancel(){V.edit=null;window._d=null;window._rf=null;V.view=V.sel?"rest":"home";R();}
+function cancel(){V.edit=null;window._d=null;window._rf=null;window._wf=null;V.view=V.sel?"rest":"home";R();}
 
 // Restaurant
 function saveR(){var n=document.getElementById("rN").value.trim();if(!n)return;
@@ -492,7 +511,10 @@ var d={rid:rid,dishName:n,date:document.getElementById("dDt").value,dishTag:wind
 if(V.view==="editD"&&V.edit){Object.assign(D.dishes.find(function(x){return x.id===V.edit.id;}),d);
 syncPush("saveDish",{id:V.edit.id,restaurantId:rid,dishName:n,date:d.date,dishTag:d.dishTag,ratings:JSON.stringify(d.ratings)});toast("Updated!");}
 else{d.id=gid();D.dishes.push(d);syncPush("saveDish",{id:d.id,restaurantId:rid,dishName:n,date:d.date,dishTag:d.dishTag,ratings:JSON.stringify(d.ratings)});toast("Dish logged! 🎉");}
-save();V.view="rest";V.edit=null;window._d=null;R();}
+save();
+if(window._wishId){var wi=D.wishlist.find(function(x){return x.id===window._wishId;});if(wi){wi.tried=true;save();}window._wishId=null;}
+if(!V.sel)V.sel=rid;
+V.view="rest";V.edit=null;window._d=null;R();}
 function editD(id){V.edit=D.dishes.find(function(d){return d.id===id;});V.view="editD";window._d=null;
 var rids=Object.keys(V.edit.ratings||{});var cids=core().map(function(p){return p.id;});
 if(rids.length>=2&&rids.every(function(r){return cids.indexOf(r)>=0;}))V.who="tog";else if(rids.length)V.who=rids[0];R();}
@@ -504,16 +526,29 @@ function logVis(rid){var v={id:gid(),rid:rid,date:td(),pids:core().map(function(
 syncPush("saveVisit",{id:v.id,restaurantId:rid,date:td(),peopleIds:JSON.stringify(v.pids)});toast("Visit logged!");R();}
 
 // Wishlist
-function saveW(){var n=document.getElementById("wN").value.trim();if(!n)return;
-var w={name:n,rn:document.getElementById("wR").value.trim(),rb:document.getElementById("wB").value.trim(),notes:document.getElementById("wNt").value.trim(),tried:false};
+function saveW(){var rn=document.getElementById("wR").value.trim();
+if(!rn){toast("Restaurant name is required");return;}
+var n=document.getElementById("wN").value.trim();
+var rb=window._wf?window._wf.rb:"";
+if(rb==="Other"){var cust=document.getElementById("wBcustom");rb=cust?cust.value.trim():"";}
+var w={name:n||rn,rn:rn,rb:rb,notes:document.getElementById("wNt").value.trim(),tried:false};
 if(V.view==="editW"&&V.edit){Object.assign(D.wishlist.find(function(x){return x.id===V.edit.id;}),w);toast("Updated!");}
 else{w.id=gid();w.wt="dish";D.wishlist.push(w);toast("Added!");}save();V.edit=null;V.view="wish";R();}
-function editW(id){V.edit=D.wishlist.find(function(w){return w.id===id;});V.view="editW";R();}
+function editW(id){V.edit=D.wishlist.find(function(w){return w.id===id;});V.view="editW";window._wf=null;R();}
 function delW(id){if(!confirm("Delete?"))return;D.wishlist=D.wishlist.filter(function(w){return w.id!==id;});save();toast("Deleted");R();}
-function markT(id){var w=D.wishlist.find(function(x){return x.id===id;});if(w){w.tried=true;save();toast("Marked as tried!");R();}}
+function undoTried(id){var w=D.wishlist.find(function(x){return x.id===id;});if(w){w.tried=false;save();toast("Moved back to wishlist");R();}}
+function markT(id){var w=D.wishlist.find(function(x){return x.id===id;});if(!w)return;
+// Open dish form pre-filled from wishlist item
+V.view="addD";V.edit=null;window._d=null;
+window._wishId=id;
+// Pre-fill dish name and try to find matching restaurant
+var preRid="";
+if(w.rn){var match=D.restaurants.find(function(r){return r.name.toLowerCase()===w.rn.toLowerCase();});if(match)preRid=match.id;}
+window._d={rid:preRid,dt:"",rt:{},dn:w.name!==w.rn?w.name||"":"",dd:td(),_init:true};
+V.who="tog";R();toast("Rate this dish!");}
 
 // People
-function addF(){var inp=document.getElementById("nwP");var n=inp.value.trim();if(!n)return;
+function addF(){var inp=document.getElementById("nwP");var n=inp.value.trim();if(!n){toast("Type a name first");return;}
 var p={id:gid(),name:n,type:"friend"};D.people.push(p);save();syncPush("savePerson",p);toast(n+" added!");R();}
 function delP(id){if(!confirm("Remove "+pn(id)+"?"))return;D.people=D.people.filter(function(x){return x.id!==id;});save();syncPush("deletePerson",{id:id});toast("Removed");R();}
 
@@ -647,6 +682,41 @@ friends().forEach(function(p){h+='<div class="who-b '+(V.who===p.id?"on":"")+'" 
 el.innerHTML=h;
 el.querySelectorAll('.who-b').forEach(function(btn){
 btn.addEventListener('click',function(){V.who=this.getAttribute('data-who');R();});});}
+
+// ---- RECOMMENDED BY PILLS (rendered after DOM ready) ----
+function renderRbBtns(){
+var el=document.getElementById("rbRow");if(!el)return;
+var RB=["Word of Mouth","Social Media","Ad","Walked by it","Other"];
+el.innerHTML=RB.map(function(o){
+return '<button class="ob '+(window._wf&&window._wf.rb===o?'on':'')+'" data-rb="'+o+'">'+o+'</button>';
+}).join('');
+el.querySelectorAll('button').forEach(function(btn){
+btn.addEventListener('click',function(){
+var v=this.getAttribute('data-rb');
+if(window._wf){
+  var cust=document.getElementById("wBcustom");
+  if(cust)window._wf.rbCustom=cust.value;
+  window._wf.rb=(window._wf.rb===v?'':v);
+}
+R();
+});});}
+
+// ---- WISHLIST PLACE SEARCH ----
+async function doWishSearch(){
+var n=document.getElementById("wR").value.trim();if(!n){toast("Type a name first");return;}
+var area=document.getElementById("wishSearchResults");
+area.innerHTML='<div class="search-loading">🔍 Searching...</div>';
+var results=await searchPlaceAPI(n);
+if(!results.length){area.innerHTML='<div class="search-loading">No results found.</div>';return;}
+area.innerHTML='<div class="search-results">'+results.map(function(r,i){
+return'<div class="search-result" onclick="pickWishSearch('+i+')"><div class="sr-name">'+esc(r.name||n)+'</div><div class="sr-addr">'+esc(r.address)+'</div></div>';
+}).join('')+'</div>';
+window._wishSearchResults=results;}
+function pickWishSearch(i){
+var r=window._wishSearchResults[i];if(!r)return;
+document.getElementById("wR").value=r.name||document.getElementById("wR").value;
+document.getElementById("wishSearchResults").innerHTML='';
+toast("Restaurant selected!");}
 
 // ---- SEARCH FILTER (no re-render) ----
 function filterCards(val){
