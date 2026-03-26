@@ -252,8 +252,8 @@ var wr=document.getElementById("wR");if(wr)window._wf.rn=wr.value;
 var wn=document.getElementById("wN");if(wn)window._wf.dn=wn.value;
 var wnt=document.getElementById("wNt");if(wnt)window._wf.notes=wnt.value;
 var wa=document.getElementById("wAddr");if(wa)window._wf.addr=wa.value;
-var wh=document.getElementById("wHood");if(wh)window._wf.hood=wh.value;
-var ws=document.getElementById("wStyles");if(ws)window._wf.wstyles=ws.value.split(",").map(function(s){return s.trim();}).filter(Boolean);
+// hood and wstyles managed via pills, already in _wf
+
 var ww=document.getElementById("wWeb");if(ww)window._wf.web=ww.value;
 }
 }
@@ -269,7 +269,7 @@ case"editList":h+=vEditList();break;}
 document.getElementById("app").innerHTML=h;
 if(V.view==="addR"||V.view==="editR")setTimeout(function(){fNP();fSP();},0);
 if(V.view==="addD"||V.view==="editD")setTimeout(function(){renderDishTypeBtns();renderWhoBtns();addCustomBtnsToFlavors();},0);
-if(V.view==="addW"||V.view==="editW")setTimeout(function(){renderRbBtns();},0);
+if(V.view==="addW"||V.view==="editW")setTimeout(function(){renderRbBtns();fWNP();fWSP();},0);
 }
 var render=R;
 
@@ -434,8 +434,8 @@ h+='<label class="lbl">Restaurant Name *</label>';
 h+='<div style="display:flex;gap:8px"><input class="inp" id="wR" value="'+esc(window._wf.rn)+'" placeholder="e.g. Tacos El Gordo" style="margin:0;flex:1"><button class="b bp bs" onclick="doWishSearch()" style="white-space:nowrap">🔍 Search</button></div>';
 h+='<div id="wishSearchResults"></div>';
 h+='<label class="lbl">Address</label><input class="inp" id="wAddr" value="'+esc(window._wf.addr)+'" placeholder="Auto-filled from search">';
-h+='<label class="lbl">Neighborhood</label><input class="inp" id="wHood" value="'+esc(window._wf.hood)+'" placeholder="e.g. Convoy, North Park...">';
-h+='<label class="lbl">Style of Food</label><input class="inp" id="wStyles" value="'+esc((window._wf.wstyles||[]).join(", "))+'" placeholder="e.g. Mexican, Sushi...">';
+h+='<label class="lbl">Neighborhood</label><input class="inp" id="wHoodSearch" placeholder="Search neighborhoods..." oninput="fWNP()"><div class="pls" id="wNP"></div>';
+h+='<label class="lbl">Style of Food</label><input class="inp" id="wStyleSearch" placeholder="Search styles..." oninput="fWSP()"><div class="pls" id="wSP"></div>';
 h+='<label class="lbl">Website</label><input class="inp" id="wWeb" value="'+esc(window._wf.web)+'" placeholder="e.g. https://restaurant.com">';
 h+='<label class="lbl">Dish Name</label><input class="inp" id="wN" value="'+esc(window._wf.dn)+'" placeholder="e.g. Their birria tacos">';
 h+='<label class="lbl">Recommended By</label><div class="or" id="rbRow"></div>';
@@ -591,9 +591,9 @@ var n=document.getElementById("wN").value.trim();
 var rb=window._wf?window._wf.rb:"";
 if(rb==="Other"){var cust=document.getElementById("wBcustom");rb=cust?cust.value.trim():"";}
 var addr=document.getElementById("wAddr")?document.getElementById("wAddr").value.trim():"";
-var hood=document.getElementById("wHood")?document.getElementById("wHood").value.trim():"";
-var stylesRaw=document.getElementById("wStyles")?document.getElementById("wStyles").value:"";
-var wstyles=stylesRaw.split(",").map(function(s){return s.trim();}).filter(Boolean);
+var hood=window._wf?window._wf.hood:"";
+var stylesRaw="";
+var wstyles=window._wf?window._wf.wstyles||[]:[];
 var web=document.getElementById("wWeb")?document.getElementById("wWeb").value.trim():"";
 var w={name:n||rn,rn:rn,addr:addr,hood:hood,wstyles:wstyles,web:web,rb:rb,notes:document.getElementById("wNt").value.trim(),tried:false};
 if(V.view==="editW"&&V.edit){Object.assign(D.wishlist.find(function(x){return x.id===V.edit.id;}),w);toast("Updated!");}
@@ -804,6 +804,46 @@ if(window._wf){
 }
 R();
 });});}
+
+// ---- WISHLIST NEIGHBORHOOD & STYLE PILLS ----
+function fWNP(){
+var s=(document.getElementById("wHoodSearch")||{}).value||"";s=s.toLowerCase();
+var AN=allNeighborhoods();
+var list=s?AN.filter(function(n){return n.toLowerCase().indexOf(s)>=0;}):AN.slice(0,12);
+var c=document.getElementById("wNP");if(!c)return;
+var selHood=window._wf?window._wf.hood:"";
+c.innerHTML=list.map(function(n){
+return '<button class="pl '+(selHood===n?"on":"")+'" data-whood="'+esc(n)+'">'+esc(n)+'</button>';
+}).join('')+'<button class="pl" data-whood="_add" style="color:var(--accent)">+ Custom</button>';
+c.querySelectorAll('button').forEach(function(btn){
+btn.addEventListener('click',function(){
+var v=this.getAttribute('data-whood');
+if(v==="_add"){var nv=prompt("New neighborhood:");if(!nv||!nv.trim())return;nv=nv.trim();
+if(D.customNeighborhoods.indexOf(nv)<0&&BASE_NEIGHBORHOODS.indexOf(nv)<0){D.customNeighborhoods.push(nv);save();}
+if(window._wf)window._wf.hood=nv;fWNP();return;}
+if(window._wf)window._wf.hood=(window._wf.hood===v?"":v);
+fWNP();});});}
+
+function fWSP(){
+var s=(document.getElementById("wStyleSearch")||{}).value||"";s=s.toLowerCase();
+var AS=allStyles();
+var list=s?AS.filter(function(x){return x.toLowerCase().indexOf(s)>=0;}):AS.slice(0,12);
+var c=document.getElementById("wSP");if(!c)return;
+var selStyles=window._wf?window._wf.wstyles||[]:[];
+c.innerHTML=list.map(function(x){
+return '<button class="pl '+(selStyles.indexOf(x)>=0?"on":"")+'" data-wstyle="'+esc(x)+'">'+esc(x)+'</button>';
+}).join('')+'<button class="pl" data-wstyle="_add" style="color:var(--accent)">+ Custom</button>';
+c.querySelectorAll('button').forEach(function(btn){
+btn.addEventListener('click',function(){
+var v=this.getAttribute('data-wstyle');
+if(v==="_add"){var nv=prompt("New food style:");if(!nv||!nv.trim())return;nv=nv.trim();
+if(D.customStyles.indexOf(nv)<0&&BASE_STYLES.indexOf(nv)<0){D.customStyles.push(nv);save();}
+if(window._wf){if(!window._wf.wstyles)window._wf.wstyles=[];window._wf.wstyles.push(nv);}fWSP();return;}
+if(window._wf){
+if(!window._wf.wstyles)window._wf.wstyles=[];
+var idx=window._wf.wstyles.indexOf(v);
+if(idx>=0)window._wf.wstyles.splice(idx,1);else window._wf.wstyles.push(v);}
+fWSP();});});}
 
 // ---- WISHLIST PLACE SEARCH ----
 async function doWishSearch(){
