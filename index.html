@@ -344,17 +344,29 @@ var ed=V.view==="editD",it=V.edit||{},pre=V.sel;
 if(!window._d||!window._d._init){window._d={rid:it.rid||pre||"",dt:it.dishTag||"",rt:it.ratings?JSON.parse(JSON.stringify(it.ratings)):{},dn:it.dishName||"",dd:it.date||td(),_init:true};}
 if(!V.who&&core().length>=2)V.who="tog";else if(!V.who&&core().length)V.who=core()[0].id;
 var h='<div class="fc"><div class="ft">'+(ed?"Edit Dish":"Log a Dish")+'</div>';
-if(!pre||ed){
 var selRest=window._d.rid?D.restaurants.find(function(r){return r.id===window._d.rid;}):null;
 var selRestName=selRest?selRest.name:"";
+var showRestPicker=!pre||ed||window._d.changingRest;
+if(selRest&&!showRestPicker){
+// Show current restaurant with Change button
+h+='<label class="lbl">Restaurant</label>';
+h+='<div class="cd" style="margin-bottom:10px;padding:10px 14px"><div class="ch"><div>';
+h+='<div style="font-weight:600;color:var(--text)">'+esc(selRest.name)+'</div>';
+if(selRest.address)h+='<div style="font-size:12px;color:var(--text3);margin-top:2px">📍 '+esc(selRest.address)+'</div>';
+if(selRest.neighborhood)h+='<div style="font-size:12px;color:var(--text3)">📌 '+esc(selRest.neighborhood)+'</div>';
+if(selRest.website)h+='<div style="margin-top:2px"><a href="'+(selRest.website.startsWith("http")?esc(selRest.website):"https://"+esc(selRest.website))+'" target="_blank" class="web-link">🔗 '+esc(selRest.website.replace(/^https?:\/\//,"").slice(0,40))+'</a></div>';
+h+='</div><div><button class="b bo bs" onclick="window._d.changingRest=true;R()">Change</button></div></div></div>';
+} else {
+// Show search + dropdown
 h+='<label class="lbl">Restaurant *</label>';
 h+='<div style="display:flex;gap:8px"><input class="inp" id="dRsearch" value="'+esc(window._d.rSearch||selRestName)+'" placeholder="Search or type restaurant name..." style="margin:0;flex:1"><button class="b bp bs" onclick="doDishRestSearch()" style="white-space:nowrap">🔍 Search</button></div>';
 h+='<div id="dishRestResults"></div>';
-h+='<select class="sel" id="dR" onchange="window._d.rid=this.value;var o=this.options[this.selectedIndex];if(o&&o.value){window._d.rSearch=o.text;}" style="font-size:13px"><option value="">— Or pick from saved restaurants —</option>'+D.restaurants.slice().sort(function(a,b){return a.name.localeCompare(b.name);}).map(function(r){return'<option value="'+r.id+'"'+(window._d.rid===r.id?' selected':'')+'>'+esc(r.name)+'</option>';}).join('')+'</select>';
+h+='<select class="sel" id="dR" onchange="window._d.rid=this.value;window._d.changingRest=false;var o=this.options[this.selectedIndex];if(o&&o.value){window._d.rSearch=o.text;}R()" style="font-size:13px"><option value="">— Pick from saved restaurants —</option>'+D.restaurants.slice().sort(function(a,b){return a.name.localeCompare(b.name);}).map(function(r){return'<option value="'+r.id+'"'+(window._d.rid===r.id?' selected':'')+'>'+esc(r.name)+'</option>';}).join('')+'</select>';
 if(selRest){h+='<div style="font-size:12px;color:var(--text3);margin:-6px 0 8px;padding:0 4px">';
 if(selRest.address)h+='📍 '+esc(selRest.address)+'<br>';
 if(selRest.website)h+='<a href="'+(selRest.website.startsWith("http")?esc(selRest.website):"https://"+esc(selRest.website))+'" target="_blank" class="web-link">🔗 '+esc(selRest.website.replace(/^https?:\/\//,"").slice(0,40))+'</a>';
 h+='</div>';}
+if(pre&&showRestPicker){h+='<button class="b bg bs" onclick="window._d.changingRest=false;R()" style="margin-bottom:8px">Cancel change</button>';}
 }
 h+='<label class="lbl">Dish name *</label><input class="inp" id="dN" value="'+esc(window._d.dn||"")+'" placeholder="e.g. Miso-glazed black cod">'+
 '<label class="lbl">Date</label><input class="inp" type="date" id="dDt" value="'+(window._d.dd||td())+'">'+
@@ -834,7 +846,7 @@ var n=document.getElementById("dRsearch").value.trim();if(!n){toast("Type a name
 // First check if it matches an existing restaurant
 var match=D.restaurants.find(function(r){return r.name.toLowerCase()===n.toLowerCase();});
 if(match){window._d.rid=match.id;window._d.rSearch=match.name;
-document.getElementById("dR").value=match.id;toast("Found: "+match.name);return;}
+document.getElementById("dR").value=match.id;window._d.changingRest=false;toast("Found: "+match.name);R();return;}
 // Search via API
 var area=document.getElementById("dishRestResults");
 area.innerHTML='<div class="search-loading">🔍 Searching...</div>';
@@ -855,14 +867,14 @@ window._d.rid=existing.id;window._d.rSearch=existing.name;
 // Update address if we got a better one
 if(r.address&&!existing.address){existing.address=r.address;save();}
 document.getElementById("dishRestResults").innerHTML='';
-toast("Selected: "+existing.name);R();return;}
+window._d.changingRest=false;toast("Selected: "+existing.name);R();return;}
 // Create new restaurant
 var nr={id:gid(),name:searchName,address:r.address||"",neighborhood:"",styles:[],website:""};
 D.restaurants.push(nr);save();
 syncPush("saveRestaurant",{id:nr.id,name:nr.name,address:nr.address,neighborhood:"",styles:"[]",website:""});
 window._d.rid=nr.id;window._d.rSearch=nr.name;
 document.getElementById("dishRestResults").innerHTML='';
-toast("Created & selected: "+nr.name);R();}
+window._d.changingRest=false;toast("Created & selected: "+nr.name);R();}
 
 // ---- SEARCH FILTER (no re-render) ----
 function filterCards(val){
