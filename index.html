@@ -207,27 +207,29 @@ case"wish":h+=vWish();break;case"addW":case"editW":h+=vWishForm();break;
 case"frec":h+=vFrec();break;case"people":h+=vPeople();break;case"setup":h+=vSetup();break;
 case"editList":h+=vEditList();break;}
 document.getElementById("app").innerHTML=h;
-if(V.view==="addR"||V.view==="editR")setTimeout(function(){fNP();fSP();},0);}
+if(V.view==="addR"||V.view==="editR")setTimeout(function(){fNP();fSP();},0);
+if(V.view==="addD"||V.view==="editD")setTimeout(function(){renderDishTypeBtns();renderWhoBtns();},0);
+}
 var render=R;
 
 // ---- HOME ----
 function vHome(){
 var h='<div class="nav"><div class="nav-tab '+(V.tab==="spots"?"on":"")+'" onclick="V.tab=\'spots\';R()">🍽️ Spots</div><div class="nav-tab" onclick="nav(\'rand\')">🎲 Random</div><div class="nav-tab" onclick="nav(\'best\')">🏆 Best Of</div><div class="nav-tab" onclick="nav(\'wish\')">📝 Wishlist</div><div class="nav-tab" onclick="nav(\'frec\')">💬 Friend Recs</div></div>';
 h+='<div class="br"><button class="b bp f1" onclick="nav(\'addR\')">+ Restaurant</button><button class="b bo f1" onclick="addDishNav()">+ Log a Dish</button></div>';
-h+='<input class="inp" placeholder="Search restaurants or food styles..." value="'+esc(V.search)+'" oninput="V.search=this.value;R()">';
+h+='<input class="inp" id="homeSearch" placeholder="Search restaurants or food styles..." value="'+esc(V.search)+'" oninput="filterCards(this.value)">';
 var nbs=[],sts=[];D.restaurants.forEach(function(r){if(r.neighborhood&&nbs.indexOf(r.neighborhood)<0)nbs.push(r.neighborhood);(r.styles||[]).forEach(function(s){if(sts.indexOf(s)<0)sts.push(s);});});nbs.sort();sts.sort();
 if(nbs.length||sts.length){h+='<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap"><select class="sel" style="flex:1;min-width:140px;margin:0;font-size:13px" onchange="V.fN=this.value;R()"><option value="">All neighborhoods</option>'+nbs.map(function(n){return'<option value="'+esc(n)+'"'+(V.fN===n?' selected':'')+'>'+esc(n)+'</option>';}).join('')+'</select><select class="sel" style="flex:1;min-width:140px;margin:0;font-size:13px" onchange="V.fS=this.value;R()"><option value="">All styles</option>'+sts.map(function(s){return'<option value="'+esc(s)+'"'+(V.fS===s?' selected':'')+'>'+esc(s)+'</option>';}).join('')+'</select></div>';}
 var fl=D.restaurants.filter(function(r){
 if(V.search&&!r.name.toLowerCase().includes(V.search.toLowerCase())&&!(r.styles||[]).some(function(s){return s.toLowerCase().includes(V.search.toLowerCase());}))return false;
 if(V.fN&&r.neighborhood!==V.fN)return false;if(V.fS&&!(r.styles||[]).includes(V.fS))return false;return true;
 }).sort(function(a,b){return a.name.localeCompare(b.name);});
-if(fl.length){h+=fl.map(function(r){
+if(fl.length){h+='<div id="restList">';h+=fl.map(function(r){
 var rd=rdish(r.id),vc=rvis(r.id).length;
 var best=rd.filter(function(d){for(var k in(d.ratings||{}))if(d.ratings[k].ps>0)return true;return false;}).sort(function(a,b){var am=0,bm=0;for(var k in(a.ratings||{}))am=Math.max(am,a.ratings[k].ps||0);for(var k in(b.ratings||{}))bm=Math.max(bm,b.ratings[k].ps||0);return bm-am;})[0];
-return'<div class="cd cd-tap" onclick="openR(\''+r.id+'\')"><div class="ch"><div><div class="ct">'+esc(r.name)+'</div><div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">'+(r.neighborhood?'<span class="tg-sm">📌 '+esc(r.neighborhood)+'</span>':'')+(r.styles||[]).slice(0,2).map(function(s){return'<span class="tg-sm">'+esc(s)+'</span>';}).join('')+'</div></div><div style="text-align:right">'+(vc?'<div class="vb">🔄 '+vc+' visit'+(vc!==1?'s':'')+'</div>':'')+'<div style="font-size:12px;color:var(--text3);margin-top:3px">'+rd.length+' dish'+(rd.length!==1?'es':'')+'</div>'+(best?'<div style="font-size:11px;color:var(--accent);margin-top:1px">⭐ '+esc(best.dishName.length>16?best.dishName.slice(0,16)+"…":best.dishName)+'</div>':'')+'</div></div></div>';
-}).join('');}
+return'<div class="cd cd-tap" data-rname="'+esc(r.name.toLowerCase())+'" data-rstyles="'+(r.styles||[]).join(',').toLowerCase()+'" onclick="openR(\''+r.id+'\')"><div class="ch"><div><div class="ct">'+esc(r.name)+'</div><div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px">'+(r.neighborhood?'<span class="tg-sm">📌 '+esc(r.neighborhood)+'</span>':'')+(r.styles||[]).slice(0,2).map(function(s){return'<span class="tg-sm">'+esc(s)+'</span>';}).join('')+'</div></div><div style="text-align:right">'+(vc?'<div class="vb">🔄 '+vc+' visit'+(vc!==1?'s':'')+'</div>':'')+'<div style="font-size:12px;color:var(--text3);margin-top:3px">'+rd.length+' dish'+(rd.length!==1?'es':'')+'</div>'+(best?'<div style="font-size:11px;color:var(--accent);margin-top:1px">⭐ '+esc(best.dishName.length>16?best.dishName.slice(0,16)+"…":best.dishName)+'</div>':'')+'</div></div></div>';
+}).join('');h+='</div>';}
 else if(!D.restaurants.length){h+='<div class="emp"><div class="emp-i">🍽️</div><div class="emp-t">No restaurants yet</div><div>Add your first spot and start logging!</div></div>';}
-else{h+='<div class="emp">No matches found.</div>';}
+else{h+='<div id="restList"><div class="emp">No matches found.</div></div>';}
 return h;}
 
 // ---- RESTAURANT FORM ----
@@ -284,11 +286,8 @@ var h='<div class="fc"><div class="ft">'+(ed?"Edit Dish":"Log a Dish")+'</div>';
 if(!pre){h+='<label class="lbl">Restaurant *</label><select class="sel" id="dR" onchange="window._d.rid=this.value"><option value="">Pick a restaurant...</option>'+D.restaurants.map(function(r){return'<option value="'+r.id+'"'+(window._d.rid===r.id?" selected":"")+'>'+esc(r.name)+'</option>';}).join('')+'</select>';}
 h+='<label class="lbl">Dish name *</label><input class="inp" id="dN" value="'+esc(window._d.dn||"")+'" placeholder="e.g. Miso-glazed black cod">'+
 '<label class="lbl">Date</label><input class="inp" type="date" id="dDt" value="'+(window._d.dd||td())+'">'+
-'<label class="lbl">Dish type</label><div class="or">'+DTAGS.map(function(t){return'<button class="ob '+(window._d.dt===t?"on":"")+'" onclick="window._d.dt=window._d.dt===\''+esc(t)+'\'?\'\':\''+esc(t)+'\';R()">'+esc(t)+'</button>';}).join('')+'</div>'+
-'<div class="sb"><span class="sh">Who\'s logging?</span></div><div class="who">'+
-'<div class="who-b '+(V.who==="tog"?"on":"")+'" onclick="V.who=\'tog\';R()">👫 Together</div>'+
-core().map(function(p){return'<div class="who-b '+(V.who===p.id?"on":"")+'" onclick="V.who=\''+p.id+'\';R()">'+esc(p.name)+'</div>';}).join('')+
-friends().map(function(p){return'<div class="who-b '+(V.who===p.id?"on":"")+'" onclick="V.who=\''+p.id+'\';R()">'+esc(p.name)+'</div>';}).join('')+'</div>';
+'<label class="lbl">Dish type</label><div class="or" id="dtRow"></div>'+
+'<div class="sb"><span class="sh">Who is logging?</span></div><div class="who" id="whoRow"></div>';
 var raters=V.who==="tog"?core():D.people.filter(function(p){return p.id===V.who;});
 var isFr=raters.length===1&&raters[0].type==="friend";
 var AF=allFlavors();
@@ -406,6 +405,7 @@ return h;}
 // ACTIONS
 // ============================================================
 function nav(v){V.view=v;V.edit=null;window._d=null;window._rf=null;if(v==="home"){V.sel=null;V.tab="spots";}window.scrollTo(0,0);R();}
+function softR(){capForm();var sy=window.scrollY;R();window.scrollTo(0,sy);}
 function addDishNav(){if(!D.restaurants.length){toast("Add a restaurant first!");return;}V.view="addD";V.edit=null;window._d=null;R();}
 function openR(id){V.sel=id;V.view="rest";window.scrollTo(0,0);R();}
 function cancel(){V.edit=null;window._d=null;window._rf=null;V.view=V.sel?"rest":"home";R();}
@@ -549,14 +549,17 @@ if(!u){V.api=null;localStorage.removeItem(API_STORAGE);toast("Cleared");return;}
 V.api=u;localStorage.setItem(API_STORAGE,u);var st=document.getElementById("syncSt");
 st.innerHTML='<div style="color:var(--yellow);font-size:13px;margin-top:8px">Initializing...</div>';
 var r=await api("init");
-if(r&&r.success){st.innerHTML='<div style="color:var(--green);font-size:13px;margin-top:8px">✓ Connected! Pushing data...</div>';
-for(var i=0;i<D.restaurants.length;i++)await api("saveRestaurant",Object.assign({},D.restaurants[i],{styles:JSON.stringify(D.restaurants[i].styles)}));
-for(var i=0;i<D.dishes.length;i++){var x=D.dishes[i];await api("saveDish",{id:x.id,restaurantId:x.rid,dishName:x.dishName,date:x.date,dishTag:x.dishTag,ratings:JSON.stringify(x.ratings)});}
-for(var i=0;i<D.people.length;i++)await api("savePerson",D.people[i]);
-for(var i=0;i<D.wishlist.length;i++){var x=D.wishlist[i];await api("saveWishlist",{id:x.id,wishType:x.wt,name:x.name,restaurantName:x.rn,recommendedBy:x.rb,notes:x.notes,tried:x.tried});}
-for(var i=0;i<D.visits.length;i++){var x=D.visits[i];await api("saveVisit",{id:x.id,restaurantId:x.rid,date:x.date,peopleIds:JSON.stringify(x.pids)});}
-await syncCustomLists();
-st.innerHTML='<div style="color:var(--green);font-size:13px;margin-top:8px">✓ All synced!</div>';toast("Connected!");}
+if(r&&r.success){st.innerHTML='<div style="color:var(--green);font-size:13px;margin-top:8px">✓ Connected! Pushing all data...</div>';
+var bulk={
+restaurants:D.restaurants.map(function(x){return{id:x.id,name:x.name,address:x.address,neighborhood:x.neighborhood,styles:JSON.stringify(x.styles||[]),website:x.website||"",createdAt:x.createdAt||""};}),
+dishes:D.dishes.map(function(x){return{id:x.id,restaurantId:x.rid,dishName:x.dishName,date:x.date,dishTag:x.dishTag||"",ratings:JSON.stringify(x.ratings||{}),createdAt:x.createdAt||""};}),
+people:D.people.map(function(x){return{id:x.id,name:x.name,type:x.type,createdAt:x.createdAt||""};}),
+wishlist:D.wishlist.map(function(x){return{id:x.id,wishType:x.wt||"dish",name:x.name,restaurantName:x.rn||"",recommendedBy:x.rb||"",notes:x.notes||"",tried:x.tried||false,createdAt:x.createdAt||""};}),
+visits:D.visits.map(function(x){return{id:x.id,restaurantId:x.rid,date:x.date,peopleIds:JSON.stringify(x.pids||[]),createdAt:x.createdAt||""};}),
+customLists:{flavors:D.customFlavors||[],neighborhoods:D.customNeighborhoods||[],styles:D.customStyles||[]}};
+var br=await api("bulkSync",bulk);
+if(br&&br.success){st.innerHTML='<div style="color:var(--green);font-size:13px;margin-top:8px">✓ All synced! ('+br.counts.restaurants+' restaurants, '+br.counts.dishes+' dishes)</div>';toast("Connected!");}
+else{st.innerHTML='<div style="color:var(--red);font-size:13px;margin-top:8px">✗ Bulk sync failed. Try again.</div>';}}
 else st.innerHTML='<div style="color:var(--red);font-size:13px;margin-top:8px">✗ Failed. Check URL.</div>';}
 async function syncNow(){if(!V.api){toast("Set API URL first");return;}toast("Syncing...");await syncFrom();toast("Synced!");}
 function expD(){var b=new Blob([JSON.stringify(D,null,2)],{type:"application/json"});var a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="plate-notes-"+td()+".json";a.click();toast("Exported!");}
@@ -578,6 +581,44 @@ var c=document.getElementById("sP"),m=document.getElementById("sM");
 if(m)m.style.display=(s||window._showS)?"none":"block";
 if(c)c.innerHTML=list.map(function(x){return'<button class="pl '+(window._rs.indexOf(x)>=0?"on":"")+'" onclick="tSP(\''+esc(x)+'\')">'+esc(x)+'</button>';}).join('');}
 function tSP(s){var i=window._rs.indexOf(s);if(i>=0)window._rs.splice(i,1);else window._rs.push(s);fSP();}
+
+// ---- DISH TYPE + WHO BUTTONS (rendered after DOM ready) ----
+function renderDishTypeBtns(){
+var el=document.getElementById("dtRow");if(!el)return;
+el.innerHTML=DTAGS.map(function(t){
+return '<button class="ob '+(window._d&&window._d.dt===t?'on':'')+'" data-tag="'+t+'">'+t+'</button>';
+}).join('');
+el.querySelectorAll('button').forEach(function(btn){
+btn.addEventListener('click',function(){
+var t=this.getAttribute('data-tag');
+if(window._d)window._d.dt=(window._d.dt===t?'':t);
+renderDishTypeBtns();
+});});}
+
+
+function renderWhoBtns(){
+var el=document.getElementById("whoRow");if(!el)return;
+var h='<div class="who-b '+(V.who==="tog"?"on":"")+'" data-who="tog">👫 Together</div>';
+core().forEach(function(p){h+='<div class="who-b '+(V.who===p.id?"on":"")+'" data-who="'+p.id+'">'+esc(p.name)+'</div>';});
+friends().forEach(function(p){h+='<div class="who-b '+(V.who===p.id?"on":"")+'" data-who="'+p.id+'">'+esc(p.name)+'</div>';});
+el.innerHTML=h;
+el.querySelectorAll('.who-b').forEach(function(btn){
+btn.addEventListener('click',function(){V.who=this.getAttribute('data-who');R();});});}
+
+// ---- SEARCH FILTER (no re-render) ----
+function filterCards(val){
+V.search=val;
+var cards=document.querySelectorAll('#restList .cd');
+var q=val.toLowerCase();
+var anyVisible=false;
+cards.forEach(function(card){
+var name=card.getAttribute('data-rname')||'';
+var styles=card.getAttribute('data-rstyles')||'';
+var match=!q||name.indexOf(q)>=0||styles.indexOf(q)>=0;
+card.style.display=match?'':'none';
+if(match)anyVisible=true;
+});
+}
 
 // ---- INIT ----
 load();R();
