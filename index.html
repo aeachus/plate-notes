@@ -145,7 +145,7 @@ var hasA=D.people.some(function(p){return p.name==="Alisha"&&p.type==="core";});
 var hasS=D.people.some(function(p){return p.name==="Shawn"&&p.type==="core";});
 if(!hasA)D.people.unshift({id:gid(),name:"Alisha",type:"core"});
 if(!hasS)D.people.push({id:gid(),name:"Shawn",type:"core"});
-dedup();migrateRatings();save();}
+dedup();migrateRatings();migrateStyles();save();}
 function migrateRatings(){
 // Build a map of current person IDs
 var idSet={};D.people.forEach(function(p){idSet[p.id]=true;});
@@ -169,6 +169,26 @@ needsFix=true;}}
 if(needsFix)d.ratings=newRatings;
 });
 if(fixed)console.log("Migrated "+fixed+" rating entries to current people IDs");}
+function migrateStyles(){
+var tags={
+"mandarin wok":["Chinese"],
+"poppy boba kitchen":["Bakery/Café"],
+"steamy piggy":["Chinese","Dim Sum","Ramen"],
+"wing stop":["American","BBQ"],
+"cheesecake factory":["American","Fine Dining"],
+"monsta ramen curry":["Japanese","Ramen"],
+"lupe's mexican eatery":["Mexican","Tacos"],
+"mic drop comedy":["American","Gastropub"],
+"chili's":["American","Mexican"],
+"crispy burger":["American"],
+"sushi deli 3":["Japanese","Sushi"],
+"coronado brewing morena":["American","Gastropub"]
+};
+D.restaurants.forEach(function(r){
+if(r.styles&&r.styles.length)return;
+var key=r.name.toLowerCase();
+if(tags[key])r.styles=tags[key].slice();
+});}
 function save(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(D));}catch(e){}}
 function gid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
 function td(){return new Date().toISOString().split("T")[0]}
@@ -196,7 +216,7 @@ var vals=typeof cl.values==="string"?tryP(cl.values,[]):cl.values||[];
 if(cl.listType==="flavors")D.customFlavors=vals;
 if(cl.listType==="neighborhoods")D.customNeighborhoods=vals;
 if(cl.listType==="styles")D.customStyles=vals;});}
-dedup();migrateRatings();save();R();}}
+dedup();migrateRatings();migrateStyles();save();R();}}
 function tryP(s,def){try{return JSON.parse(s)}catch(e){return def}}
 function syncPush(action,data){api(action,data);}
 function showSync(t){document.querySelectorAll(".sync").forEach(function(e){e.remove()});var e=document.createElement("div");e.className="sync sync-"+t;e.textContent=t==="ok"?"✓ Synced":t==="err"?"✗ Sync error":"↻ Syncing...";document.body.appendChild(e);setTimeout(function(){e.remove()},t==="ok"?1500:3000);}
