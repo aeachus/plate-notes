@@ -33,6 +33,10 @@ body.dark .rand-card{background:var(--card)}
 body.dark .share-card{background:linear-gradient(135deg,#1c1714 0%,#2a2320 100%)}
 body.dark .share-card .sc-dish{background:rgba(255,255,255,.08)}
 body.dark input[type="checkbox"]{accent-color:var(--accent)}
+body.dark .inp,body.dark .sel,body.dark .ta{background:#352d27;border-color:#4a3f37;color:var(--text)}
+body.dark .inp:focus,body.dark .sel:focus,body.dark .ta:focus{border-color:var(--accent)}
+body.dark .person-section{background:#352d27;border-color:#4a3f37}
+body.dark .hdr-icon{background:#352d27;border-color:#4a3f37;filter:brightness(1.3)}
 html{height:100%;-webkit-text-size-adjust:100%}
 body{font-family:var(--font-b);background:var(--bg);color:var(--text);min-height:100%;-webkit-font-smoothing:antialiased}
 .app{max-width:480px;margin:0 auto;padding:0 16px 100px;min-height:100vh}
@@ -143,10 +147,13 @@ var BASE_FLAVORS=["Savory","Smoky","Spicy","Sweet","Tangy"];
 var DTAGS=["Drink","Entrée","Appetizer","Side","Shared Plate","Dessert"];
 var OA=[{l:"Yes",e:"👍",c:"tg-grn"},{l:"Maybe",e:"🤷",c:"tg-ylw"},{l:"No",e:"👎",c:"tg-red"}];
 
-var D={restaurants:[],dishes:[],people:[],wishlist:[],visits:[],customFlavors:[],customNeighborhoods:[],customStyles:[],customDishTags:[]};
+var D={restaurants:[],dishes:[],people:[],wishlist:[],visits:[],customFlavors:[],customNeighborhoods:[],customStyles:[],customDishTags:[],customRecBy:[]};
 var V={view:"home",tab:"spots",sel:null,edit:null,search:"",fN:"",fS:"",who:null,whoFriends:[],restSort:"dishtype",homeSort:"wishlist",api:null};
 
 // Merged list getters
+function allDishTypes(){var base=DTAGS.slice();(D.customDishTags||[]).forEach(function(t){if(base.indexOf(t)<0)base.push(t);});var removed=D.removed_dishtypes||[];return base.filter(function(x){return removed.indexOf(x)<0;});}
+var BASE_RECBY=["Ad","Social Media","Walked by it","Word of Mouth","Other"];
+function allRecBy(){var base=BASE_RECBY.slice();(D.customRecBy||[]).forEach(function(r){if(base.indexOf(r)<0)base.push(r);});var removed=D.removed_recommendedby||[];return sortOtherLast(base.filter(function(x){return removed.indexOf(x)<0;}));}
 function allFlavors(){var base=BASE_FLAVORS.slice();D.customFlavors.forEach(function(f){if(base.indexOf(f)<0)base.push(f);});return base;}
 function allNeighborhoods(){var base=BASE_NEIGHBORHOODS.slice();D.customNeighborhoods.forEach(function(n){if(base.indexOf(n)<0)base.push(n);});return base.sort();}
 function allStyles(){var base=BASE_STYLES.slice();D.customStyles.forEach(function(s){if(base.indexOf(s)<0)base.push(s);});return base.sort();}
@@ -521,6 +528,8 @@ return'<button class="b bg" onclick="nav(\'home\')">← Back</button><div class=
 '<button class="b bo bw bs" onclick="openEditList(\'flavors\')">🌶️ Edit Flavors ('+allFlavors().length+')</button>'+
 '<button class="b bo bw bs" onclick="openEditList(\'neighborhoods\')">📌 Edit Neighborhoods ('+allNeighborhoods().length+')</button>'+
 '<button class="b bo bw bs" onclick="openEditList(\'styles\')">🍴 Edit Food Styles ('+allStyles().length+')</button>'+
+'<button class="b bo bw bs" onclick="openEditList(\'dishtypes\')">🍽️ Edit Dish Types ('+allDishTypes().length+')</button>'+
+'<button class="b bo bw bs" onclick="openEditList(\'recommendedby\')">💬 Edit Recommended By ('+allRecBy().length+')</button>'+
 '</div></div>'+
 '<div class="fc"><div class="sh">Data Management</div>'+
 '<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">'+
@@ -531,10 +540,14 @@ return'<button class="b bg" onclick="nav(\'home\')">← Back</button><div class=
 // ---- EDIT LIST VIEW ----
 function vEditList(){
 var type=V.editListType;
-var label=type==="flavors"?"Flavors":type==="neighborhoods"?"Neighborhoods":"Food Styles";
-var base=type==="flavors"?BASE_FLAVORS:type==="neighborhoods"?BASE_NEIGHBORHOODS:BASE_STYLES;
-var custom=type==="flavors"?D.customFlavors:type==="neighborhoods"?D.customNeighborhoods:D.customStyles;
-var all=type==="flavors"?allFlavors():type==="neighborhoods"?allNeighborhoods():allStyles();
+var labels={"flavors":"Flavors","neighborhoods":"Neighborhoods","styles":"Food Styles","dishtypes":"Dish Types","recommendedby":"Recommended By"};
+var label=labels[type]||type;
+var bases={"flavors":BASE_FLAVORS,"neighborhoods":BASE_NEIGHBORHOODS,"styles":BASE_STYLES,"dishtypes":DTAGS,"recommendedby":BASE_RECBY};
+var base=bases[type]||[];
+var customs={"flavors":D.customFlavors,"neighborhoods":D.customNeighborhoods,"styles":D.customStyles,"dishtypes":D.customDishTags||[],"recommendedby":D.customRecBy||[]};
+var custom=customs[type]||[];
+var allFns={"flavors":allFlavors,"neighborhoods":allNeighborhoods,"styles":allStyles,"dishtypes":allDishTypes,"recommendedby":allRecBy};
+var all=allFns[type]?allFns[type]():[];
 var h='<button class="b bg" onclick="nav(\'setup\')">← Back to Settings</button><div class="ft">Edit '+label+'</div>';
 h+='<div style="display:flex;gap:8px;margin-bottom:16px"><input class="inp" id="newListItem" placeholder="Add new '+label.toLowerCase().slice(0,-1)+'..." style="margin:0;flex:1"><button class="b bp bs" onclick="addListItem()">+ Add</button></div>';
 h+='<div class="sb"><span class="sh">All '+label+' ('+all.length+')</span></div>';
@@ -792,14 +805,23 @@ function cpShare(){if(window._stxt){navigator.clipboard.writeText(window._stxt).
 // ---- CUSTOM LIST MANAGEMENT ----
 function openEditList(type){V.editListType=type;V.view="editList";R();}
 function addListItem(){var inp=document.getElementById("newListItem");var v=inp.value.trim();if(!v)return;
-var type=V.editListType;var custom=type==="flavors"?D.customFlavors:type==="neighborhoods"?D.customNeighborhoods:D.customStyles;
-var all=type==="flavors"?allFlavors():type==="neighborhoods"?allNeighborhoods():allStyles();
+var type=V.editListType;
+var customs={"flavors":D.customFlavors,"neighborhoods":D.customNeighborhoods,"styles":D.customStyles,"dishtypes":D.customDishTags||[],"recommendedby":D.customRecBy||[]};
+var custom=customs[type]||[];
+var allFns={"flavors":allFlavors,"neighborhoods":allNeighborhoods,"styles":allStyles,"dishtypes":allDishTypes,"recommendedby":allRecBy};
+var all=allFns[type]?allFns[type]():[];
 if(all.indexOf(v)>=0){toast("Already exists!");return;}
-custom.push(v);save();syncCustomLists();toast("Added!");R();}
+custom.push(v);
+if(type==="dishtypes"&&!D.customDishTags)D.customDishTags=[];
+if(type==="dishtypes")D.customDishTags=custom;
+if(type==="recommendedby"&&!D.customRecBy)D.customRecBy=[];
+if(type==="recommendedby")D.customRecBy=custom;
+save();syncCustomLists();toast("Added!");R();}
 function removeListItem(item){if(!confirm('Remove "'+item+'"?'))return;
 var type=V.editListType;
-var base=type==="flavors"?BASE_FLAVORS:type==="neighborhoods"?BASE_NEIGHBORHOODS:BASE_STYLES;
-var customKey=type==="flavors"?"customFlavors":type==="neighborhoods"?"customNeighborhoods":"customStyles";
+var bases2={"flavors":BASE_FLAVORS,"neighborhoods":BASE_NEIGHBORHOODS,"styles":BASE_STYLES,"dishtypes":DTAGS,"recommendedby":BASE_RECBY};var base=bases2[type]||[];
+var customKeys={"flavors":"customFlavors","neighborhoods":"customNeighborhoods","styles":"customStyles","dishtypes":"customDishTags","recommendedby":"customRecBy"};
+var customKey=customKeys[type]||"customStyles";
 // If it's a base item, add to custom as a removal marker? No, simpler: just add to a "removed" concept
 // Actually simplest: for base items, we add them to custom and then remove. But base items aren't in custom.
 // Let's just: if it's a custom item, remove from custom. If it's a base item, we need a "removed" list.
@@ -816,7 +838,8 @@ if(D[customKey].indexOf(item)>=0){
 save();syncCustomLists();toast("Removed!");R();}
 function renameListItem(item){var newName=prompt('Rename "'+item+'" to:',item);
 if(!newName||newName.trim()===item)return;newName=newName.trim();
-var type=V.editListType;var customKey=type==="flavors"?"customFlavors":type==="neighborhoods"?"customNeighborhoods":"customStyles";
+var type=V.editListType;var customKeys={"flavors":"customFlavors","neighborhoods":"customNeighborhoods","styles":"customStyles","dishtypes":"customDishTags","recommendedby":"customRecBy"};
+var customKey=customKeys[type]||"customStyles";
 var idx=D[customKey].indexOf(item);
 if(idx>=0){D[customKey][idx]=newName;}else{
   // Base item rename: remove base, add custom
@@ -890,7 +913,7 @@ function tSP(s){var i=window._rs.indexOf(s);if(i>=0)window._rs.splice(i,1);else 
 // ---- DISH TYPE + WHO BUTTONS (rendered after DOM ready) ----
 function renderDishTypeBtns(){
 var el=document.getElementById("dtRow");if(!el)return;
-var allDT=DTAGS.slice();(D.customDishTags||[]).forEach(function(t){if(allDT.indexOf(t)<0)allDT.push(t);});
+var allDT=allDishTypes();
 el.innerHTML=allDT.map(function(t){
 return '<button class="ob '+(window._d&&window._d.dt===t?'on':'')+'" data-tag="'+t+'">'+t+'</button>';
 }).join('')+'<button class="ob" data-tag="_add" style="color:var(--accent)">+ Custom</button>';
@@ -928,7 +951,7 @@ R();});});}
 // ---- RECOMMENDED BY PILLS (rendered after DOM ready) ----
 function renderRbBtns(){
 var el=document.getElementById("rbRow");if(!el)return;
-var RB=["Ad","Social Media","Walked by it","Word of Mouth","Other"];
+var RB=allRecBy();
 el.innerHTML=RB.map(function(o){
 return '<button class="ob '+(window._wf&&window._wf.rb===o?'on':'')+'" data-rb="'+o+'">'+o+'</button>';
 }).join('');
@@ -1061,15 +1084,16 @@ var searchName=(r.name||document.getElementById("dRsearch").value).trim();
 var existing=D.restaurants.find(function(x){return x.name.toLowerCase()===searchName.toLowerCase();});
 if(existing){
 window._d.rid=existing.id;window._d.rSearch=existing.name;
-// Update address if we got a better one
 if(r.address&&!existing.address)existing.address=r.address;if(r.website&&!existing.website)existing.website=r.website;save();
+var drs=document.getElementById("dRsearch");if(drs)drs.value=existing.name;
 document.getElementById("dishRestResults").innerHTML='';
 window._d.changingRest=false;toast("Selected: "+existing.name);R();return;}
 // Create new restaurant
 var nr={id:gid(),name:searchName,address:r.address||"",neighborhood:"",styles:[],website:r.website||""};
 D.restaurants.push(nr);save();
-syncPush("saveRestaurant",{id:nr.id,name:nr.name,address:nr.address,neighborhood:"",styles:"[]",website:""});
+syncPush("saveRestaurant",{id:nr.id,name:nr.name,address:nr.address,neighborhood:"",styles:"[]",website:nr.website});
 window._d.rid=nr.id;window._d.rSearch=nr.name;
+var drs=document.getElementById("dRsearch");if(drs)drs.value=searchName;
 document.getElementById("dishRestResults").innerHTML='';
 window._d.changingRest=false;toast("Created & selected: "+nr.name);R();}
 
