@@ -19,6 +19,20 @@
   --input:#faf7f2;--font-d:'Fraunces',Georgia,serif;--font-b:'Outfit',sans-serif;
   --r:12px;--rl:16px;--sh:0 1px 4px rgba(58,46,34,.06);--shm:0 4px 14px rgba(58,46,34,.1);
 }
+body.dark{
+  --bg:#1c1714;--card:#2a2320;--border:#3d342c;
+  --accent:#e07a4a;--accent-dark:#c86838;--accent-light:#3a2a1f;
+  --green:#6faa73;--green-light:#1e2e1f;--yellow:#d4ad4a;--yellow-light:#2e2a1a;--red:#d47070;--red-light:#2e1a1a;
+  --text:#e8e0d6;--text2:#bfb5a8;--text3:#8a7e72;--text4:#5e554c;
+  --input:#2a2320;--sh:0 1px 4px rgba(0,0,0,.2);--shm:0 4px 14px rgba(0,0,0,.3);
+}
+body.dark .sel{background-image:url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238a7e72' stroke-width='1.5' fill='none'/%3E%3C/svg%3E")}
+body.dark .search-results{background:var(--card)}
+body.dark .search-result:active{background:var(--accent-light)}
+body.dark .rand-card{background:var(--card)}
+body.dark .share-card{background:linear-gradient(135deg,#1c1714 0%,#2a2320 100%)}
+body.dark .share-card .sc-dish{background:rgba(255,255,255,.08)}
+body.dark input[type="checkbox"]{accent-color:var(--accent)}
 html{height:100%;-webkit-text-size-adjust:100%}
 body{font-family:var(--font-b);background:var(--bg);color:var(--text);min-height:100%;-webkit-font-smoothing:antialiased}
 .app{max-width:480px;margin:0 auto;padding:0 16px 100px;min-height:100vh}
@@ -85,7 +99,7 @@ body{font-family:var(--font-b);background:var(--bg);color:var(--text);min-height
 .rand-meta{font-size:13px;color:var(--text3)}
 @keyframes rs{0%{transform:scale(.9);opacity:.3}50%{transform:scale(1.03)}100%{transform:scale(1);opacity:1}}
 .bo-rank{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;font-size:13px;font-weight:700;margin-right:10px;flex-shrink:0}
-.share-card{background:linear-gradient(135deg,#3a2e22 0%,#5a4535 100%);border-radius:20px;padding:24px;color:#fff;margin:16px 0}
+.share-card{background:linear-gradient(135deg,var(--text) 0%,var(--text2) 100%);border-radius:20px;padding:24px;color:#fff;margin:16px 0}
 .share-card h3{font-family:var(--font-d);font-size:20px;font-weight:700;margin-bottom:4px}
 .share-card .sc-meta{font-size:12px;opacity:.7;margin-bottom:14px}
 .share-card .sc-dish{background:rgba(255,255,255,.12);border-radius:10px;padding:10px 14px;margin-bottom:6px}
@@ -262,7 +276,7 @@ var wss=document.getElementById("wStyleSearch");if(wss)window._wf.styleSearch=ws
 }
 }
 function R(){capForm();
-var h='<div class="hdr" onclick="nav(\'home\')"><div><h1>Plate Notes</h1><div class="hdr-sub">San Diego Dining Journal</div></div><div class="hdr-icons"><div class="hdr-icon" onclick="event.stopPropagation();nav(\'people\')" title="People">👥</div><div class="hdr-icon" onclick="event.stopPropagation();nav(\'setup\')" title="Settings">⚙️</div></div></div>';
+var h='<div class="hdr" onclick="nav(\'home\')"><div><h1>Plate Notes</h1><div class="hdr-sub">San Diego Dining Journal</div></div><div class="hdr-icons"><div class="hdr-icon" onclick="event.stopPropagation();toggleDark()" title="Toggle dark mode" id="darkBtn">'+(_dark?'☀️':'🌙')+'</div><div class="hdr-icon" onclick="event.stopPropagation();nav(\'people\')" title="People">👥</div><div class="hdr-icon" onclick="event.stopPropagation();nav(\'setup\')" title="Settings">⚙️</div></div></div>';
 switch(V.view){
 case"home":h+=vHome();break;case"addR":case"editR":h+=vRestForm();break;
 case"rest":h+=vRest();break;case"addD":case"editD":h+=vDishForm();break;
@@ -281,7 +295,7 @@ var render=R;
 function vHome(){
 var h='<div class="nav"><div class="nav-tab '+(V.tab==="spots"?"on":"")+'" onclick="V.tab=\'spots\';R()">🍽️ Spots</div><div class="nav-tab" onclick="nav(\'rand\')">🎲 Random</div><div class="nav-tab" onclick="nav(\'best\')">🏆 Best Of</div><div class="nav-tab" onclick="nav(\'wish\')">📝 Wishlist</div><div class="nav-tab" onclick="nav(\'frec\')">💬 Friend Recs</div></div>';
 h+='<div class="br"><button class="b bp f1" onclick="nav(\'addR\')">+ Restaurant</button><button class="b bo f1" onclick="addDishNav()">+ Log a Dish</button></div>';
-h+='<input class="inp" id="homeSearch" placeholder="Search restaurants or food styles..." value="'+esc(V.search)+'" oninput="filterCards(this.value)">';
+h+='<input class="inp" id="homeSearch" placeholder="Search restaurants or food styles..." value="'+esc(V.search)+'" oninput="filterCards(this.value)" autocomplete="off">';
 var nbs=[],sts=[];D.restaurants.forEach(function(r){if(r.neighborhood&&nbs.indexOf(r.neighborhood)<0)nbs.push(r.neighborhood);(r.styles||[]).forEach(function(s){if(sts.indexOf(s)<0)sts.push(s);});});nbs.sort();sts.sort();
 if(nbs.length||sts.length){h+='<div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap"><select class="sel" style="flex:1;min-width:140px;margin:0;font-size:13px" onchange="V.fN=this.value;R()"><option value="">All neighborhoods</option>'+nbs.map(function(n){return'<option value="'+esc(n)+'"'+(V.fN===n?' selected':'')+'>'+esc(n)+'</option>';}).join('')+'</select><select class="sel" style="flex:1;min-width:140px;margin:0;font-size:13px" onchange="V.fS=this.value;R()"><option value="">All styles</option>'+sts.map(function(s){return'<option value="'+esc(s)+'"'+(V.fS===s?' selected':'')+'>'+esc(s)+'</option>';}).join('')+'</select></div>';}
 h+='<div style="display:flex;gap:8px;margin-bottom:14px;align-items:center"><span style="font-size:12px;color:var(--text3)">Sort:</span><select class="sel" style="margin:0;font-size:12px;padding:6px 30px 6px 10px;width:auto;flex:0" onchange="V.homeSort=this.value;saveSort(\'homeSort\',this.value);R()">';
@@ -307,7 +321,7 @@ function vRestForm(){
 var ed=V.view==="editR",it=V.edit||{};
 if(!window._rf||!window._rf._init){window._rf={name:it.name||"",addr:it.address||"",web:it.website||"",_init:true};window._rn=it.neighborhood||"";window._rs=[].concat(it.styles||[]);window._showN=false;window._showS=false;}
 return'<div class="fc"><div class="ft">'+(ed?"Edit Restaurant":"New Restaurant")+'</div>'+
-'<label class="lbl">Name *</label><div style="display:flex;gap:8px"><input class="inp" id="rN" value="'+esc(window._rf.name)+'" placeholder="e.g. Juniper & Ivy" style="margin:0;flex:1"><button class="b bp bs" onclick="doSearch()" style="white-space:nowrap">🔍 Search</button></div>'+
+'<label class="lbl">Name *</label><div style="display:flex;gap:8px"><input class="inp" id="rN" value="'+esc(window._rf.name)+'" placeholder="e.g. Juniper & Ivy" style="margin:0;flex:1" autocomplete="off" oninput="acSearch(\'rN\',\'searchResults\',\'pickSearchResult\')"><button class="b bp bs" onclick="doSearch()" style="white-space:nowrap">🔍 Search</button></div>'+
 '<div id="searchResults"></div>'+
 '<label class="lbl">Address</label><input class="inp" id="rA" value="'+esc(window._rf.addr)+'" placeholder="e.g. 2228 Kettner Blvd">'+
 '<label class="lbl">Website</label><input class="inp" id="rW" value="'+esc(window._rf.web)+'" placeholder="e.g. https://restaurant.com">'+
@@ -390,7 +404,7 @@ h+='</div><div><button class="b bo bs" onclick="window._d.changingRest=true;R()"
 } else {
 // Show search + dropdown
 h+='<label class="lbl">Restaurant *</label>';
-h+='<div style="display:flex;gap:8px"><input class="inp" id="dRsearch" value="'+esc(window._d.rSearch||selRestName)+'" placeholder="Search or type restaurant name..." style="margin:0;flex:1"><button class="b bp bs" onclick="doDishRestSearch()" style="white-space:nowrap">🔍 Search</button></div>';
+h+='<div style="display:flex;gap:8px"><input class="inp" id="dRsearch" value="'+esc(window._d.rSearch||selRestName)+'" placeholder="Search or type restaurant name..." style="margin:0;flex:1" autocomplete="off" oninput="acSearch(\'dRsearch\',\'dishRestResults\',\'pickDishRest\')"><button class="b bp bs" onclick="doDishRestSearch()" style="white-space:nowrap">🔍 Search</button></div>';
 h+='<div id="dishRestResults"></div>';
 h+='<select class="sel" id="dR" onchange="window._d.rid=this.value;window._d.changingRest=false;var o=this.options[this.selectedIndex];if(o&&o.value){window._d.rSearch=o.text;}R()" style="font-size:13px"><option value="">— Pick from saved restaurants —</option>'+D.restaurants.slice().sort(function(a,b){return a.name.localeCompare(b.name);}).map(function(r){return'<option value="'+r.id+'"'+(window._d.rid===r.id?' selected':'')+'>'+esc(r.name)+'</option>';}).join('')+'</select>';
 if(selRest){h+='<div style="font-size:12px;color:var(--text3);margin:-6px 0 8px;padding:0 4px">';
@@ -462,7 +476,7 @@ if(presets.indexOf(irb)<0){irc=irb;irb="Other";}
 window._wf={rb:irb,rbCustom:irc,rn:it.rn||"",addr:it.addr||"",hood:it.hood||"",wstyles:it.wstyles||[],web:it.web||"",dn:it.name||"",notes:it.notes||"",hoodSearch:"",styleSearch:"",_init:true};}
 var h='<div class="fc"><div class="ft">'+(ed?"Edit":"Add to Wishlist")+'</div>';
 h+='<label class="lbl">Restaurant Name *</label>';
-h+='<div style="display:flex;gap:8px"><input class="inp" id="wR" value="'+esc(window._wf.rn)+'" placeholder="e.g. Tacos El Gordo" style="margin:0;flex:1"><button class="b bp bs" onclick="doWishSearch()" style="white-space:nowrap">🔍 Search</button></div>';
+h+='<div style="display:flex;gap:8px"><input class="inp" id="wR" value="'+esc(window._wf.rn)+'" placeholder="e.g. Tacos El Gordo" style="margin:0;flex:1" autocomplete="off" oninput="acSearch(\'wR\',\'wishSearchResults\',\'pickWishSearch\')"><button class="b bp bs" onclick="doWishSearch()" style="white-space:nowrap">🔍 Search</button></div>';
 h+='<div id="wishSearchResults"></div>';
 h+='<label class="lbl">Address</label><input class="inp" id="wAddr" value="'+esc(window._wf.addr)+'" placeholder="Auto-filled from search">';
 h+='<label class="lbl">Neighborhood</label><input class="inp" id="wHoodSearch" value="'+esc(window._wf.hoodSearch||"")+'" placeholder="Search neighborhoods..." oninput="fWNP()"><div class="pls" id="wNP"></div>';
@@ -565,7 +579,7 @@ return'<div class="search-result" onclick="pickSearchResult('+i+')"><div class="
 }).join('')+'</div>';
 window._searchResults=results;}
 function pickSearchResult(i){
-var r=window._searchResults[i];if(!r)return;
+var r=(window._searchResults&&window._searchResults[i])||(window._acR_searchResults&&window._acR_searchResults[i]);if(!r)return;
 document.getElementById("rN").value=r.name||document.getElementById("rN").value;
 document.getElementById("rA").value=r.address||"";
 var wEl=document.getElementById("rW");if(wEl&&r.website)wEl.value=r.website;
@@ -981,7 +995,7 @@ return'<div class="search-result" onclick="pickWishSearch('+i+')"><div class="sr
 }).join('')+'</div>';
 window._wishSearchResults=results;}
 function pickWishSearch(i){
-var r=window._wishSearchResults[i];if(!r)return;
+var r=(window._wishSearchResults&&window._wishSearchResults[i])||(window._acR_wishSearchResults&&window._acR_wishSearchResults[i]);if(!r)return;
 var val=r.name||document.getElementById("wR").value;
 document.getElementById("wR").value=val;
 if(window._wf){window._wf.rn=val;window._wf.addr=r.address||window._wf.addr;window._wf.web=r.website||window._wf.web||"";}
@@ -1005,6 +1019,24 @@ btn.addEventListener('click',function(){addCustomFlavor();});
 el.appendChild(btn);
 });}
 
+// ---- AUTOCOMPLETE ----
+var _acTimer=null;
+function acSearch(inputId,resultsId,pickFn){
+var el=document.getElementById(inputId);if(!el)return;
+var val=el.value.trim();
+if(val.length<2){var rd=document.getElementById(resultsId);if(rd)rd.innerHTML='';return;}
+if(_acTimer)clearTimeout(_acTimer);
+_acTimer=setTimeout(async function(){
+var rd=document.getElementById(resultsId);if(!rd)return;
+rd.innerHTML='<div class="search-loading">Searching...</div>';
+var results=await searchPlaceAPI(val);
+if(!results||!results.length){rd.innerHTML='';return;}
+window['_acR_'+resultsId]=results;
+rd.innerHTML='<div class="search-results">'+results.map(function(r,i){
+return'<div class="search-result" onclick="'+pickFn+'('+i+')"><div class="sr-name">'+esc(r.name||val)+'</div><div class="sr-addr">'+esc(r.address)+'</div>'+(r.website?'<div class="sr-addr" style="color:var(--accent)">🔗 '+esc(r.website.slice(0,45))+'</div>':'')+'</div>';
+}).join('')+'</div>';
+},400);}
+
 // ---- DISH FORM RESTAURANT SEARCH ----
 async function doDishRestSearch(){
 var n=document.getElementById("dRsearch").value.trim();if(!n){toast("Type a name first");return;}
@@ -1023,7 +1055,7 @@ return'<div class="search-result" onclick="pickDishRest('+i+')"><div class="sr-n
 window._dishRestResults=results;}
 
 function pickDishRest(i){
-var r=window._dishRestResults[i];if(!r)return;
+var r=(window._dishRestResults&&window._dishRestResults[i])||(window._acR_dishRestResults&&window._acR_dishRestResults[i]);if(!r)return;
 var searchName=(r.name||document.getElementById("dRsearch").value).trim();
 // Check if we already have this restaurant
 var existing=D.restaurants.find(function(x){return x.name.toLowerCase()===searchName.toLowerCase();});
@@ -1057,7 +1089,10 @@ if(match)anyVisible=true;
 }
 
 // ---- INIT ----
-load();R();
+var _dark=localStorage.getItem('pn-dark')==='true';
+function toggleDark(){_dark=!_dark;localStorage.setItem('pn-dark',_dark?'true':'false');applyDark();}
+function applyDark(){if(_dark)document.body.classList.add('dark');else document.body.classList.remove('dark');var meta=document.querySelector('meta[name=theme-color]');if(meta)meta.content=_dark?'#1c1714':'#f5f0e8';}
+load();applyDark();R();
 if(V.api)setTimeout(function(){syncFrom();},1000);
 </script>
 </body>
