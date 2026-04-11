@@ -255,6 +255,8 @@ var wa=document.getElementById("wAddr");if(wa)window._wf.addr=wa.value;
 // hood and wstyles managed via pills, already in _wf
 
 var ww=document.getElementById("wWeb");if(ww)window._wf.web=ww.value;
+var whs=document.getElementById("wHoodSearch");if(whs)window._wf.hoodSearch=whs.value;
+var wss=document.getElementById("wStyleSearch");if(wss)window._wf.styleSearch=wss.value;
 }
 }
 function R(){capForm();
@@ -330,7 +332,7 @@ var h='<button class="b bg" style="margin-bottom:12px" onclick="nav(\'home\')">�
 if(ds.length>1){
 h+='<div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap"><span style="font-size:12px;color:var(--text3)">Sort by:</span>';
 h+='<select class="sel" style="margin:0;font-size:12px;padding:6px 30px 6px 10px;width:auto;flex:0" onchange="V.restSort=this.value;R()">';
-var sortOpts=[["date","📅 Date (newest)"],["rating","🔥 Rating (highest)"],["az","🔤 A to Z"],["alisha","Alisha\'s rating"],["shawn","Shawn\'s rating"],["together","Together (avg)"],["dishtype","🍴 Course order"],["orderagain","👍 Would order again"],["wishlist","📝 Wishlist items first"]];
+var sortOpts=[["date","📅 Date (newest)"],["rating","🔥 Rating (highest)"],["az","🔤 A to Z"],["alisha","Alisha\'s rating"],["shawn","Shawn\'s rating"],["together","Together (avg)"],["dishtype","🍴 Course order"],["oa_all","👍 Would order again (anyone)"],["oa_alisha","👍 Alisha would order again"],["oa_shawn","👍 Shawn would order again"],["wishlist","📝 Wishlist items first"]];
 allFlavors().forEach(function(f){sortOpts.push(["flavor_"+f,"🌶️ "+f]);});
 sortOpts.forEach(function(o){h+='<option value="'+o[0]+'"'+(V.restSort===o[0]?' selected':'')+'>'+o[1]+'</option>';});
 h+='</select></div>';}
@@ -438,7 +440,7 @@ function vWish(){
 var un=D.wishlist.filter(function(w){return!w.tried;}),tr=D.wishlist.filter(function(w){return w.tried;});
 var h='<button class="b bg" onclick="nav(\'home\')">← Back</button><div class="ft">📝 Wishlist</div><button class="b bp bw" style="margin-bottom:16px" onclick="nav(\'addW\')">+ Add to Wishlist</button>';
 if(un.length){h+='<div class="sb"><span class="sh">Want to Try</span></div>';
-h+=un.map(function(w){return'<div class="cd"><div class="ch"><div><div class="ct">'+esc(w.name)+'</div>'+(w.rn?'<div class="cs">at '+esc(w.rn)+'</div>':'')+(w.addr?'<div class="cdt">📍 '+esc(w.addr)+'</div>':'')+(w.hood?'<div class="cdt">📌 '+esc(w.hood)+'</div>':'')+(w.rb?'<div class="cdt">Rec\'d by '+esc(w.rb)+'</div>':'')+(w.notes?'<div class="nt">'+esc(w.notes)+'</div>':'')+'</div><div class="ibs"><button class="ib" onclick="markT(\''+w.id+'\')">✅</button><button class="ib" onclick="editW(\''+w.id+'\')">✏️</button><button class="ib" onclick="delW(\''+w.id+'\')">🗑️</button></div></div></div>';}).join('');}
+h+=un.map(function(w){return'<div class="cd"><div class="ch"><div><div class="ct">'+esc(w.name)+'</div>'+(w.rn?'<div class="cs">at '+esc(w.rn)+'</div>':'')+(w.addr?'<div class="cdt">📍 '+esc(w.addr)+'</div>':'')+(w.hood?'<div class="cdt">📌 '+esc(w.hood)+'</div>':'')+((w.wstyles&&w.wstyles.length)?'<div class="cdt">🍴 '+esc(w.wstyles.join(", "))+'</div>':'')+(w.rb?'<div class="cdt">Rec\'d by '+esc(w.rb)+'</div>':'')+(w.notes?'<div class="nt">'+esc(w.notes)+'</div>':'')+'</div><div class="ibs"><button class="ib" onclick="markT(\''+w.id+'\')">✅</button><button class="ib" onclick="editW(\''+w.id+'\')">✏️</button><button class="ib" onclick="delW(\''+w.id+'\')">🗑️</button></div></div></div>';}).join('');}
 if(tr.length){h+='<div class="sb" style="margin-top:20px"><span class="sh" style="color:var(--text3)">Already Tried</span></div>';
 h+=tr.map(function(w){return'<div class="cd" style="opacity:.6"><div class="ch"><div><div class="ct" style="text-decoration:line-through">'+esc(w.name)+'</div>'+(w.rn?'<div class="cs">at '+esc(w.rn)+'</div>':'')+'</div><div class="ibs"><button class="ib" onclick="undoTried(\''+w.id+'\')">↩️</button><button class="ib" onclick="delW(\''+w.id+'\')">🗑️</button></div></div></div>';}).join('');}
 if(!D.wishlist.length)h+='<div class="emp">Your wishlist is empty!</div>';return h;}
@@ -448,14 +450,14 @@ if(!window._wf||!window._wf._init){
 var presets=["Word of Mouth","Social Media","Ad","Walked by it","Other",""];
 var irb=it.rb||"";var irc="";
 if(presets.indexOf(irb)<0){irc=irb;irb="Other";}
-window._wf={rb:irb,rbCustom:irc,rn:it.rn||"",addr:it.addr||"",hood:it.hood||"",wstyles:it.wstyles||[],web:it.web||"",dn:it.name||"",notes:it.notes||"",_init:true};}
+window._wf={rb:irb,rbCustom:irc,rn:it.rn||"",addr:it.addr||"",hood:it.hood||"",wstyles:it.wstyles||[],web:it.web||"",dn:it.name||"",notes:it.notes||"",hoodSearch:"",styleSearch:"",_init:true};}
 var h='<div class="fc"><div class="ft">'+(ed?"Edit":"Add to Wishlist")+'</div>';
 h+='<label class="lbl">Restaurant Name *</label>';
 h+='<div style="display:flex;gap:8px"><input class="inp" id="wR" value="'+esc(window._wf.rn)+'" placeholder="e.g. Tacos El Gordo" style="margin:0;flex:1"><button class="b bp bs" onclick="doWishSearch()" style="white-space:nowrap">🔍 Search</button></div>';
 h+='<div id="wishSearchResults"></div>';
 h+='<label class="lbl">Address</label><input class="inp" id="wAddr" value="'+esc(window._wf.addr)+'" placeholder="Auto-filled from search">';
-h+='<label class="lbl">Neighborhood</label><input class="inp" id="wHoodSearch" placeholder="Search neighborhoods..." oninput="fWNP()"><div class="pls" id="wNP"></div>';
-h+='<label class="lbl">Style of Food</label><input class="inp" id="wStyleSearch" placeholder="Search styles..." oninput="fWSP()"><div class="pls" id="wSP"></div>';
+h+='<label class="lbl">Neighborhood</label><input class="inp" id="wHoodSearch" value="'+esc(window._wf.hoodSearch||"")+'" placeholder="Search neighborhoods..." oninput="fWNP()"><div class="pls" id="wNP"></div>';
+h+='<label class="lbl">Style of Food</label><input class="inp" id="wStyleSearch" value="'+esc(window._wf.styleSearch||"")+'" placeholder="Search styles..." oninput="fWSP()"><div class="pls" id="wSP"></div>';
 h+='<label class="lbl">Website</label><input class="inp" id="wWeb" value="'+esc(window._wf.web)+'" placeholder="e.g. https://restaurant.com">';
 h+='<label class="lbl">Dish Name</label><input class="inp" id="wN" value="'+esc(window._wf.dn)+'" placeholder="e.g. Their birria tacos">';
 h+='<label class="lbl">Recommended By</label><div class="or" id="rbRow"></div>';
@@ -641,9 +643,13 @@ return(bC?bAvg/bC:0)-(aC?aAvg/aC:0);});break;
 case"dishtype":var courseOrder={"Drink":0,"Entrée":1,"Appetizer":2,"Dessert":3,"Side":4,"Shared Plate":5};
 ds.sort(function(a,b){var aO=courseOrder[a.dishTag]!==undefined?courseOrder[a.dishTag]:6;var bO=courseOrder[b.dishTag]!==undefined?courseOrder[b.dishTag]:6;if(aO!==bO)return aO-bO;return(a.dishTag||"zzz").localeCompare(b.dishTag||"zzz");});break;
 
-case"orderagain":ds.sort(function(a,b){
+case"oa_all":ds.sort(function(a,b){
 function bestOa(d){var best=3;for(var k in(d.ratings||{})){var oa=d.ratings[k].oa;var rank=oa==="Yes"?0:oa==="Maybe"?1:oa==="No"?2:3;if(rank<best)best=rank;}return best;}
 return bestOa(a)-bestOa(b);});break;
+case"oa_alisha":case"oa_shawn":var oaPid=s==="oa_alisha"?alishaId:shawnId;
+ds.sort(function(a,b){
+function pOa(d,pid){if(!d.ratings||!d.ratings[pid])return 3;var oa=d.ratings[pid].oa;return oa==="Yes"?0:oa==="Maybe"?1:oa==="No"?2:3;}
+return pOa(a,oaPid)-pOa(b,oaPid);});break;
 default:
 if(s.indexOf("flavor_")===0){var targetFlavor=s.slice(7);
 ds.sort(function(a,b){
