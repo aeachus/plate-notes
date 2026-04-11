@@ -260,7 +260,7 @@ function capForm(){
 if((V.view==="addD"||V.view==="editD")&&window._d){
 var n=document.getElementById("dN");if(n)window._d.dn=n.value;
 
-var rs=document.getElementById("dR");if(rs)window._d.rid=rs.value;var rsr=document.getElementById("dRsearch");if(rsr)window._d.rSearch=rsr.value;var dAddr=document.getElementById("dAddr");if(dAddr)window._d.rAddr=dAddr.value;var dWeb=document.getElementById("dWeb");if(dWeb)window._d.rWeb=dWeb.value;
+var rs=document.getElementById("dR");if(rs)window._d.rid=rs.value;var rsr=document.getElementById("dRsearch");if(rsr)window._d.rSearch=rsr.value;if(!window._d._justPicked){var dAddr=document.getElementById("dAddr");if(dAddr)window._d.rAddr=dAddr.value;var dWeb=document.getElementById("dWeb");if(dWeb)window._d.rWeb=dWeb.value;}else{window._d._justPicked=false;}
 var coreRaters=V.who==="tog"?core():D.people.filter(function(p){return p.id===V.who;});var friendRaters=D.people.filter(function(p){return V.whoFriends.indexOf(p.id)>=0;}).sort(function(a,b){return a.name.localeCompare(b.name);});var raters=coreRaters.concat(friendRaters);
 raters.forEach(function(p){var ta=document.getElementById("dn_"+p.id);if(ta&&window._d.rt[p.id])window._d.rt[p.id].notes=ta.value;});
 }
@@ -403,16 +403,16 @@ if(selRest&&!showRestPicker){
 // Show restaurant name with Change button, then editable address/website
 h+='<label class="lbl">Restaurant</label>';
 h+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><div style="font-weight:600;color:var(--text);flex:1;font-size:15px">'+esc(selRest.name)+'</div><button class="b bo bs" onclick="window._d.changingRest=true;R()">Change</button></div>';
-h+='<label class="lbl">Address</label><input class="inp" id="dAddr" value="'+esc(window._d.rAddr||"")+'" placeholder="Restaurant address" autocomplete="off">';
-h+='<label class="lbl">Website</label><input class="inp" id="dWeb" value="'+esc(window._d.rWeb||"")+'" placeholder="Restaurant website" autocomplete="off">';
+h+='<label class="lbl">Address</label><input class="inp" id="dAddr" autocomplete="nope" value="'+esc(window._d.rAddr||"")+'" placeholder="Restaurant address" autocomplete="nope">';
+h+='<label class="lbl">Website</label><input class="inp" id="dWeb" value="'+esc(window._d.rWeb||"")+'" placeholder="Restaurant website" autocomplete="nope">';
 } else {
 // Show search + dropdown
 h+='<label class="lbl">Restaurant *</label>';
 h+='<div style="display:flex;gap:8px"><input class="inp" id="dRsearch" value="'+esc(window._d.rSearch||selRestName)+'" placeholder="Search or type restaurant name..." style="margin:0;flex:1" autocomplete="off" oninput="acSearch(\'dRsearch\',\'dishRestResults\',\'pickDishRest\')"><button class="b bp bs" onclick="doDishRestSearch()" style="white-space:nowrap">🔍 Search</button></div>';
 h+='<div id="dishRestResults"></div>';
 h+='<select class="sel" id="dR" onchange="pickDishDropdown(this.value)" style="font-size:13px"><option value="">— Pick from saved restaurants —</option>'+D.restaurants.slice().sort(function(a,b){return a.name.localeCompare(b.name);}).map(function(r){return'<option value="'+r.id+'"'+(window._d.rid===r.id?' selected':'')+'>'+esc(r.name)+'</option>';}).join('')+'</select>';
-h+='<label class="lbl">Address</label><input class="inp" id="dAddr" value="'+esc(window._d.rAddr||"")+'" placeholder="Auto-fills from search" autocomplete="off">';
-h+='<label class="lbl">Website</label><input class="inp" id="dWeb" value="'+esc(window._d.rWeb||"")+'" placeholder="Auto-fills from search" autocomplete="off">';
+h+='<label class="lbl">Address</label><input class="inp" id="dAddr" autocomplete="nope" value="'+esc(window._d.rAddr||"")+'" placeholder="Auto-fills from search" autocomplete="nope">';
+h+='<label class="lbl">Website</label><input class="inp" id="dWeb" value="'+esc(window._d.rWeb||"")+'" placeholder="Auto-fills from search" autocomplete="nope">';
 if(window._d.rid&&showRestPicker){h+='<button class="b bg bs" onclick="window._d.changingRest=false;R()" style="margin-bottom:8px">Cancel change</button>';}
 }
 h+='<label class="lbl">Dish name *</label><input class="inp" id="dN" value="'+esc(window._d.dn||"")+'" placeholder="e.g. Miso-glazed black cod" autocomplete="off">'+
@@ -1066,6 +1066,7 @@ function pickDishDropdown(val){
 window._d.rid=val;window._d.changingRest=false;
 var sr=D.restaurants.find(function(r){return r.id===val;});
 if(sr){window._d.rSearch=sr.name;window._d.rAddr=sr.address||"";window._d.rWeb=sr.website||"";}
+window._d._justPicked=true;
 R();}
 async function doDishRestSearch(){
 var n=document.getElementById("dRsearch").value.trim();if(!n){toast("Type a name first");return;}
@@ -1094,6 +1095,7 @@ if(r.address&&!existing.address)existing.address=r.address;if(r.website&&!existi
 var drs=document.getElementById("dRsearch");if(drs)drs.value=existing.name;
 window._d.rAddr=existing.address||r.address||"";
 window._d.rWeb=existing.website||r.website||"";
+window._d._justPicked=true;
 document.getElementById("dishRestResults").innerHTML='';
 window._d.changingRest=false;toast("Selected: "+existing.name);R();return;}
 // Create new restaurant
@@ -1104,6 +1106,7 @@ window._d.rid=nr.id;window._d.rSearch=nr.name;
 var drs=document.getElementById("dRsearch");if(drs)drs.value=searchName;
 window._d.rAddr=nr.address;
 window._d.rWeb=nr.website;
+window._d._justPicked=true;
 document.getElementById("dishRestResults").innerHTML='';
 window._d.changingRest=false;toast("Created & selected: "+nr.name);R();}
 
