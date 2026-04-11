@@ -293,7 +293,8 @@ case"frec":h+=vFrec();break;case"people":h+=vPeople();break;case"setup":h+=vSetu
 case"editList":h+=vEditList();break;}
 document.getElementById("app").innerHTML=h;
 if(V.view==="addR"||V.view==="editR")setTimeout(function(){fNP();fSP();},0);
-if(V.view==="addD"||V.view==="editD")setTimeout(function(){renderDishTypeBtns();renderWhoBtns();addCustomBtnsToFlavors();},0);
+if(V.view==="addD"||V.view==="editD"){setTimeout(function(){renderDishTypeBtns();renderWhoBtns();addCustomBtnsToFlavors();},0);
+fillMissingRestInfo();}
 if(V.view==="addW"||V.view==="editW")setTimeout(function(){renderRbBtns();fWNP();fWSP();},0);
 }
 var render=R;
@@ -403,16 +404,16 @@ if(selRest&&!showRestPicker){
 // Show restaurant name with Change button, then editable address/website
 h+='<label class="lbl">Restaurant</label>';
 h+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><div style="font-weight:600;color:var(--text);flex:1;font-size:15px">'+esc(selRest.name)+'</div><button class="b bo bs" onclick="window._d.changingRest=true;R()">Change</button></div>';
-h+='<label class="lbl">Address</label><input class="inp" id="dAddr" autocomplete="nope" value="'+esc(window._d.rAddr||"")+'" placeholder="Restaurant address" autocomplete="nope">';
-h+='<label class="lbl">Website</label><input class="inp" id="dWeb" value="'+esc(window._d.rWeb||"")+'" placeholder="Restaurant website" autocomplete="nope">';
+h+='<label class="lbl">Address</label><input class="inp" id="dAddr" autocomplete="one-time-code" value="'+esc(window._d.rAddr||"")+'" placeholder="Restaurant address" autocomplete="one-time-code">';
+h+='<label class="lbl">Website</label><input class="inp" id="dWeb" value="'+esc(window._d.rWeb||"")+'" placeholder="Restaurant website" autocomplete="one-time-code">';
 } else {
 // Show search + dropdown
 h+='<label class="lbl">Restaurant *</label>';
 h+='<div style="display:flex;gap:8px"><input class="inp" id="dRsearch" value="'+esc(window._d.rSearch||selRestName)+'" placeholder="Search or type restaurant name..." style="margin:0;flex:1" autocomplete="off" oninput="acSearch(\'dRsearch\',\'dishRestResults\',\'pickDishRest\')"><button class="b bp bs" onclick="doDishRestSearch()" style="white-space:nowrap">🔍 Search</button></div>';
 h+='<div id="dishRestResults"></div>';
 h+='<select class="sel" id="dR" onchange="pickDishDropdown(this.value)" style="font-size:13px"><option value="">— Pick from saved restaurants —</option>'+D.restaurants.slice().sort(function(a,b){return a.name.localeCompare(b.name);}).map(function(r){return'<option value="'+r.id+'"'+(window._d.rid===r.id?' selected':'')+'>'+esc(r.name)+'</option>';}).join('')+'</select>';
-h+='<label class="lbl">Address</label><input class="inp" id="dAddr" autocomplete="nope" value="'+esc(window._d.rAddr||"")+'" placeholder="Auto-fills from search" autocomplete="nope">';
-h+='<label class="lbl">Website</label><input class="inp" id="dWeb" value="'+esc(window._d.rWeb||"")+'" placeholder="Auto-fills from search" autocomplete="nope">';
+h+='<label class="lbl">Address</label><input class="inp" id="dAddr" autocomplete="one-time-code" value="'+esc(window._d.rAddr||"")+'" placeholder="Auto-fills from search" autocomplete="one-time-code">';
+h+='<label class="lbl">Website</label><input class="inp" id="dWeb" value="'+esc(window._d.rWeb||"")+'" placeholder="Auto-fills from search" autocomplete="one-time-code">';
 if(window._d.rid&&showRestPicker){h+='<button class="b bg bs" onclick="window._d.changingRest=false;R()" style="margin-bottom:8px">Cancel change</button>';}
 }
 h+='<label class="lbl">Dish name *</label><input class="inp" id="dN" value="'+esc(window._d.dn||"")+'" placeholder="e.g. Miso-glazed black cod" autocomplete="off">'+
@@ -1062,6 +1063,19 @@ return'<div class="search-result" onclick="'+pickFn+'('+i+')"><div class="sr-nam
 },400);}
 
 // ---- DISH FORM RESTAURANT SEARCH ----
+async function fillMissingRestInfo(){
+if(!window._d||!window._d.rid)return;
+var rest=D.restaurants.find(function(r){return r.id===window._d.rid;});
+if(!rest||rest.website)return;
+// Restaurant has no website - try a background lookup
+try{
+var results=await searchPlaceAPI(rest.name);
+if(results&&results.length){
+var best=results.find(function(r){return r.name&&r.name.toLowerCase()===rest.name.toLowerCase();})||results[0];
+if(best.website&&!rest.website){rest.website=best.website;window._d.rWeb=best.website;var wEl=document.getElementById("dWeb");if(wEl)wEl.value=best.website;}
+if(best.address&&!rest.address){rest.address=best.address;window._d.rAddr=best.address;var aEl=document.getElementById("dAddr");if(aEl)aEl.value=best.address;}
+save();}}catch(e){}}
+
 function pickDishDropdown(val){
 window._d.rid=val;window._d.changingRest=false;
 var sr=D.restaurants.find(function(r){return r.id===val;});
