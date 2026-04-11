@@ -126,7 +126,7 @@ var STORAGE_KEY="plate-notes",API_STORAGE="plate-notes-api";
 var BASE_NEIGHBORHOODS=["Balboa Park","Banker's Hill","Barrio Logan","Bay Park","Bird Rock","Carlsbad","Carmel Valley","Chula Vista","City Heights","Clairemont","College Area","Coronado","Del Mar","Downtown","East Village","Encinitas","Escondido","Gaslamp Quarter","Golden Hill","Hillcrest","Imperial Beach","Kearny Mesa","Kensington","La Jolla","La Mesa","Liberty Station","Linda Vista","Little Italy","Mira Mesa","Miramar","Mission Bay","Mission Beach","Mission Hills","Mission Valley","Normal Heights","North Park","OB (Ocean Beach)","Old Town","Pacific Beach","Point Loma","Poway","Rancho Bernardo","Rancho Peñasquitos","Rolando","San Marcos","San Ysidro","Scripps Ranch","Serra Mesa","Shelter Island","Solana Beach","Sorrento Valley","South Park","Talmadge","Tierrasanta","University City","University Heights","Vista","Other"];
 var BASE_STYLES=["American","BBQ","Bakery/Café","Brazilian","Brunch","Burmese","Cajun/Creole","Caribbean","Chinese","Colombian","Deli/Sandwich","Dim Sum","Ethiopian","Filipino","Fine Dining","French","Gastropub","Greek","Hawaiian/Poke","Indian","Italian","Japanese","Korean","Latin Fusion","Lebanese/Middle Eastern","Malaysian","Mediterranean","Mexican","Moroccan","Neapolitan Pizza","Peruvian","Ramen","Seafood","Southern","Spanish/Tapas","Sushi","Szechuan","Tacos","Thai","Vegan/Vegetarian","Vietnamese","Other"];
 var BASE_FLAVORS=["Savory","Smoky","Spicy","Sweet","Tangy"];
-var DTAGS=["Appetizer","Dessert","Drink","Entrée","Shared Plate","Side"];
+var DTAGS=["Drink","Entrée","Appetizer","Side","Shared Plate","Dessert"];
 var OA=[{l:"Yes",e:"👍",c:"tg-grn"},{l:"Maybe",e:"🤷",c:"tg-ylw"},{l:"No",e:"👎",c:"tg-red"}];
 
 var D={restaurants:[],dishes:[],people:[],wishlist:[],visits:[],customFlavors:[],customNeighborhoods:[],customStyles:[],customDishTags:[]};
@@ -628,7 +628,13 @@ var wstyles=window._wf?window._wf.wstyles||[]:[];
 var web=document.getElementById("wWeb")?document.getElementById("wWeb").value.trim():"";
 var w={name:n||rn,rn:rn,addr:addr,hood:hood,wstyles:wstyles,web:web,rb:rb,notes:document.getElementById("wNt").value.trim(),tried:false};
 if(V.view==="editW"&&V.edit){Object.assign(D.wishlist.find(function(x){return x.id===V.edit.id;}),w);toast("Updated!");}
-else{w.id=gid();w.wt="dish";D.wishlist.push(w);toast("Added!");}save();V.edit=null;V.view="wish";R();}
+else{w.id=gid();w.wt="dish";D.wishlist.push(w);toast("Added!");}
+// Auto-create restaurant if it doesn't exist
+var existingRest=D.restaurants.find(function(r){return r.name.toLowerCase()===rn.toLowerCase();});
+if(!existingRest){var nr={id:gid(),name:rn,address:addr,neighborhood:hood,styles:wstyles,website:web};
+D.restaurants.push(nr);
+syncPush("saveRestaurant",{id:nr.id,name:nr.name,address:nr.address,neighborhood:nr.neighborhood,styles:JSON.stringify(nr.styles),website:nr.website});}
+save();V.edit=null;V.view="wish";R();}
 function editW(id){V.edit=D.wishlist.find(function(w){return w.id===id;});V.view="editW";window._wf=null;R();}
 function delW(id){if(!confirm("Delete?"))return;D.wishlist=D.wishlist.filter(function(w){return w.id!==id;});save();toast("Deleted");R();}
 function undoTried(id){var w=D.wishlist.find(function(x){return x.id===id;});if(w){w.tried=false;save();toast("Moved back to wishlist");R();}}
@@ -691,7 +697,7 @@ var aAvg=0,aC=0,bAvg=0,bC=0;
 for(var k in(a.ratings||{})){if(a.ratings[k].ps){aAvg+=a.ratings[k].ps;aC++;}}
 for(var k in(b.ratings||{})){if(b.ratings[k].ps){bAvg+=b.ratings[k].ps;bC++;}}
 return(bC?bAvg/bC:0)-(aC?aAvg/aC:0);});break;
-case"dishtype":var courseOrder={"Drink":0,"Entrée":1,"Appetizer":2,"Dessert":3,"Side":4,"Shared Plate":5};
+case"dishtype":var courseOrder={"Drink":0,"Entrée":1,"Appetizer":2,"Side":3,"Shared Plate":4,"Dessert":5};
 ds.sort(function(a,b){var aO=courseOrder[a.dishTag]!==undefined?courseOrder[a.dishTag]:6;var bO=courseOrder[b.dishTag]!==undefined?courseOrder[b.dishTag]:6;if(aO!==bO)return aO-bO;return(a.dishTag||"zzz").localeCompare(b.dishTag||"zzz");});break;
 
 case"oa_all":ds.sort(function(a,b){
@@ -868,7 +874,7 @@ function tSP(s){var i=window._rs.indexOf(s);if(i>=0)window._rs.splice(i,1);else 
 // ---- DISH TYPE + WHO BUTTONS (rendered after DOM ready) ----
 function renderDishTypeBtns(){
 var el=document.getElementById("dtRow");if(!el)return;
-var allDT=DTAGS.slice();(D.customDishTags||[]).forEach(function(t){if(allDT.indexOf(t)<0)allDT.push(t);});allDT.sort();
+var allDT=DTAGS.slice();(D.customDishTags||[]).forEach(function(t){if(allDT.indexOf(t)<0)allDT.push(t);});
 el.innerHTML=allDT.map(function(t){
 return '<button class="ob '+(window._d&&window._d.dt===t?'on':'')+'" data-tag="'+t+'">'+t+'</button>';
 }).join('')+'<button class="ob" data-tag="_add" style="color:var(--accent)">+ Custom</button>';
